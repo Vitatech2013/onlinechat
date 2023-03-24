@@ -1,0 +1,115 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+
+
+<style>
+    .form-control {
+        border-radius: 15px;
+    }
+
+    .tablecss {
+        font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+        border-collapse: collapse;
+        width: 100%;
+    }
+
+    .tablecss td,
+    .tablecss th {
+        border: 1px solid #ddd;
+        padding: 8px;
+    }
+
+    .tablecss tr:nth-child(odd) {
+        background-color: #f2f2f2;
+    }
+
+    .tablecss tr:hover {
+        background-color: #ddd;
+    }
+
+    .tablecss th {
+        padding-top: 12px;
+        padding-bottom: 12px;
+        text-align: center;
+        background-color: lavender;
+        color: black;
+        font-weight: bold;
+    }
+</style>
+
+<script>
+    const User = sessionStorage.getItem('username');
+    function performAjax(httpMethod, url, params) {
+        const myPromise = new Promise((resolve, reject) => {
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    resolve(JSON.parse(this.responseText));
+
+                }
+                if (this.status == 500) {
+                    reject({ error: true, message: "ServerError" });
+                }
+                if (this.status == 404) {
+                    reject({ error: true, message: "Resource not found" });
+                }
+            };
+            xhttp.open(httpMethod, url, true);
+            xhttp.setRequestHeader("Content-Type", "application/json");
+            params ? xhttp.send(params) : xhttp.send();
+        });
+        return myPromise;
+    }
+    function LoadData() {
+        event.preventDefault();
+        const getdata1 = performAjax("GET", "http://localhost:4000/User/showUsers");
+        getdata1
+            .then((details) => {
+
+                ViewUsers(details);
+
+            })
+            .catch(err => {
+                alert(err.message);
+            })
+    }
+
+    function Show(id, UserName) {
+
+        event.preventDefault();
+        sessionStorage.setItem("tousername", UserName);
+        sessionStorage.setItem("id", id);
+        window.location.href = "Viewchat";
+    }
+
+    function ViewUsers(records) {
+        let tableHeader = `<tr><th>SNo</th><th>FirstName</th><th>LastName</th><th>UserName</th><th>Emailid</th><th>PhoneNumber</th><th>Qualification</th><th>Action</th></tr>`;
+        if (records.length > 0) {
+            let tableRow = records.map((details, index) => {
+               if(User!==details.UserName) {
+                const chatButton = `<a  onclick="Show('${details._id}', '${details.UserName}')" style="color:green"> CHAT</a>`;
+
+                return `<tr><td>${index + 1}</td><td>${details.FirstName}<td>${details.LastName}<td>${details.UserName}</td><td>${details.Emailid}</td> <td>${details.PhoneNo}</td><td>${details.Qualification}</td ><td>${chatButton}</td> </tr>`;
+               }
+            });
+            document.getElementById("viewtable").innerHTML = `<table  class="scripted table" border="2">${tableHeader}${tableRow.join('')}</table>`;
+        }
+
+        else {
+            tableRow = `<tr><td colspan="14" align="center">No Data Found</td></tr>`;
+            document.getElementById("viewtable").innerHTML = `${tableHeader}${tableRow}`;
+        }
+    }
+
+</script>
+
+<body onload="LoadData()">
+    <br>
+    <br>
+    <center>
+        <table id=viewtable border="1" class="tablecss" style="width: 1000px;"></table>
+    </center>
+</body>

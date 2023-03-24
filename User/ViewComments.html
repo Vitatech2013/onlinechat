@@ -1,0 +1,153 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+
+<style>
+    .form-control {
+        border-radius: 15px;
+    }
+
+    .tablecss {
+        font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+        border-collapse: collapse;
+        width: 60%;
+    }
+
+    .tablecss td,
+    .tablecss th {
+        border: 1px solid #ddd;
+        padding: 8px;
+    }
+
+    .tablecss tr:nth-child(odd) {
+        background-color: #f2f2f2;
+    }
+
+    .tablecss tr:hover {
+        background-color: #ddd;
+    }
+
+    .tablecss th {
+        padding-top: 12px;
+        padding-bottom: 12px;
+        text-align: center;
+        background-color: lavender;
+        color: black;
+        font-weight: bold;
+    }
+</style>
+<script>
+    const UserName = sessionStorage.getItem('username');
+    const Topic = sessionStorage.getItem('Topic');
+
+    function performAjax(httpMethod, url, params) {
+        const myPromise = new Promise((resolve, reject) => {
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    resolve(JSON.parse(this.responseText));
+
+                }
+                if (this.status == 500) {
+                    reject({ error: true, message: "ServerError" });
+                }
+                if (this.status == 404) {
+                    reject({ error: true, message: "Resource not found" });
+                }
+            };
+            xhttp.open(httpMethod, url, true);
+            xhttp.setRequestHeader("Content-Type", "application/json");
+            params ? xhttp.send(params) : xhttp.send();
+        });
+        return myPromise;
+    }
+
+    function getUserName() {
+        document.getElementById("uname").value = UserName;
+        document.getElementById("topic").value = Topic;
+        const getdata1 = performAjax("GET", "http://localhost:4000/User/show");
+        getdata1
+            .then((details) => {
+                Viewcomments(details);
+
+            })
+            .catch(err => {
+                alert(err.message);
+            })
+    }
+
+
+    function Viewcomments(records) {
+        let tableHeader = `<tr><th>SNo</th><th>UserName</th><th>comment</th></tr>`;
+        if (records.length > 0) {
+            let tableRow = records.map((details, index) => {
+                return `<tr><td>${index + 1}</td><td>${details.UserName}</td><td>${details.Comment}</td></tr>`;
+
+            });
+            document.getElementById("viewtable").innerHTML = `<table  class="scripted table" border="2">${tableHeader}${tableRow.join('')}</table>`;
+        }
+
+        else {
+            tableRow = `<tr><td colspan="3" align="center">No Data Found</td></tr>`;
+            document.getElementById("viewtable").innerHTML = `${tableHeader}${tableRow}`;
+        }
+    }
+    function AddComment() {
+        event.preventDefault();
+        const UserName = document.getElementById("uname").value;
+        const Comment = document.getElementById("comment").value;
+        const Topic = document.getElementById("topic").value;
+
+        const addcomPromise = performAjax(
+            "POST",
+            "http://localhost:4000/User/addcomments",
+            JSON.stringify({ UserName, Topic, Comment })
+
+        );
+        addcomPromise
+            .then((res) => {
+                alert('Successfully Coomment Added');
+                getUserName();
+                const Comment = document.getElementById("comment").value="";
+            })
+            .catch(err => {
+                alert(err.message);
+                alert('Successfully not Coomment Added');
+
+            })
+        }
+  
+</script>
+
+<body onload="getUserName()">
+    <br>
+    <form onsubmit="AddComment()">
+    <div class="row">
+            <div class="col-sm-3"><input type="hidden" name="uname" id="uname" disabled="false" class="form-control" placeholder="enter username" required></div>
+            <div class="col-sm-1">
+                <label for="">Topic</label>
+            </div>
+            <div class="col-sm-5">
+                <input type="text" name="topic" disabled="false" id="topic" class="form-control" required>
+            </div>
+            <div class="col-sm-3"></div>
+        </div><br>
+    <center>
+        <table id=viewtable border="1" class="tablecss" style="width: 1000px;"></table>
+    </center>
+    <br><br>
+   
+    <div class="row">
+        <div class="col-sm-3"></div>
+        <div class="col-sm-1">
+            <label for="">Comment</label>
+        </div>
+        <div class="col-sm-3">
+            <textarea rows="3" name="comment"  id="comment" class="form-control" placeholder="enter comment" required></textarea>
+        </div>
+        <div class="col-sm-2"><button type="submit"  class="btn btn-success btn btn-lg">Add</button></div>
+        <div class="col-sm-3"></div>
+    </div><br></form>
+</body>

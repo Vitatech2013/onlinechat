@@ -1,0 +1,178 @@
+<meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+
+  
+  <style>
+    .form-control{
+          border-radius:15px;
+      }
+      .tablecss {
+            font-family: "Trebuchet MS", Arial, Helvetica, sans-serif; border-collapse: collapse; width: 100%;
+        }
+        .tablecss td, .tablecss th {
+            border: 1px solid #ddd; padding: 8px;
+        }
+        .tablecss tr:nth-child(odd){ background-color: #f2f2f2; }
+        .tablecss tr:hover { background-color: #ddd; }
+        .tablecss th {
+            padding-top: 12px; padding-bottom: 12px; text-align: center; background-color: lavender; color: black; font-weight: bold;
+        }
+      </style>
+
+<script>
+let addtopics=[];
+function performAjax(httpMethod, url, params) {
+            const myPromise = new Promise((resolve, reject) => {
+                var xhttp = new XMLHttpRequest();
+                xhttp.onreadystatechange = function () {
+                    if (this.readyState == 4 && this.status == 200) {
+                        resolve(JSON.parse(this.responseText));
+
+                    }
+                    if (this.status == 500) {
+                        reject({ error: true, message: "ServerError" });
+                    }
+                    if (this.status == 404) {
+                        reject({ error: true, message: "Resource not found" });
+                    }
+                };
+                xhttp.open(httpMethod, url, true);
+                xhttp.setRequestHeader("Content-Type", "application/json");
+                params ? xhttp.send(params) : xhttp.send();
+            });
+            return myPromise;
+        }
+        function LoadData() {
+            event.preventDefault();
+            const getdata1 = performAjax("GET", "http://localhost:4000/Admin/showtopic");
+            getdata1
+                .then((details) => {
+
+                  ViewTopics(details);
+                   
+                })
+                .catch(err => {
+                    alert(err.message);
+                })
+        }
+        function deleteFile(event) {
+            event.preventDefault();
+      var result = confirm("Are you sure you want to delete?");
+      if (result) {
+        const getDeletePromise = performAjax('DELETE', `http://localhost:4000/Admin/topicdel/${event.target.id}`);
+        getDeletePromise
+          .then((FilesList) => {
+            ViewTopics(FilesList);
+          })
+          .catch(err => {
+            alert(err.message);
+          })
+      }
+    }
+    function UpdateTopic() {
+      
+        const id = document.getElementById("id").value;
+        const Topic = document.getElementById("topic").value;
+                const getUpdatePromise = performAjax(
+                    "PUT",
+                    `http://localhost:4000/Admin/topicupdate/${id}`,
+                    JSON.stringify({Topic})
+                );
+                getUpdatePromise
+                .then((updatePromise) => {
+                    alert('Topic Updated');
+                    ViewTopics(updatePromise);
+                })
+                .catch(err => {
+                    alert(err.message);
+                })
+           
+        }
+       
+     
+    function ShowPopUp(id,Topic) {
+        event.preventDefault();
+        document.getElementById("id").value = id;  
+        document.getElementById("topic").value = Topic; 
+    }
+    function Show(id,Topic) {
+        event.preventDefault();
+      
+        sessionStorage.setItem("Topic", Topic);
+        sessionStorage.setItem("id", id);
+        window.location.href = "adminViewcom";
+    }
+        function ViewTopics(records) {
+            let tableHeader = `<tr><th>SNo</th><th>Topic</th><th>Action</th></tr>`;
+            if (records.length > 0) {
+                let tableRow = records.map((details, index) => {
+                    const deleteButton = `<a id="${details._id}"
+                         onclick="deleteFile(event)" style="color:red"  class="glyphicon glyphicon-trash"></a>`;
+                const editButton = `<a  style="color:green" class="glyphicon glyphicon-pencil" data-toggle="modal" data-target="#myModal" onclick="ShowPopUp('${details._id}', '${details.Topic}')"></a>`;
+                const commentButton = `<a  onclick="Show('${details._id}', '${details.Topic}')" style="color:green" >ViewComments</a>`;
+                    return `<tr><td>${index + 1}</td><td>${details.Topic}</td><td>${deleteButton} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ${editButton}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${commentButton}</td></tr>`;
+                            
+                });
+                document.getElementById("viewtable").innerHTML = `<table  class="scripted table" border="2">${tableHeader}${tableRow.join('')}</table>`;
+            }
+
+            else {
+                tableRow = `<tr><td colspan="14" align="center">No Data Found</td></tr>`;
+                document.getElementById("viewtable").innerHTML = `${tableHeader}${tableRow}`;
+            }
+        }
+
+</script>
+
+<body onload="LoadData()">
+  <br>
+  <br>
+  <br>
+    <center>
+    <table id=viewtable border="1"  class="tablecss" style="width: 1000px;"></table>
+</center>
+<br>
+<div class="modal fade" id="myModal" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title">Update Status</h4>
+            </div>
+            <div class="modal-body">
+                
+                        <div class="row">
+                                <div class="col-md-3"></div>
+                                <div class="col-md-3"><label for="">Id</label></div>
+                                <div class="col-md-4"><input type="text" class="form-control" disabled="false"  name="id" id="id" placeholder="User Name" required></div>
+                                <div class="col-md-2"></div>
+                            </div><br>
+                    <div class="row">
+                        <div class="col-md-3"></div>
+                        <div class="col-md-3"><label for="">Topic Name</label></div>
+                        <div class="col-md-4"><input type="text" class="form-control"  name="uname" id="topic" placeholder="User Name" required></div>
+                        <div class="col-md-2"></div>
+                    </div><br>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            
+                        </div>
+                        <div class="col-md-3"><button type="submit" onclick="UpdateTopic()" id="submit" class="btn btn-info" data-dismiss="modal" >UpdateSatus</button></div>
+                        <div class="col-md-3"></div>
+                    </div>
+                   
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div> 
+ 
+   
+    </body>
+    

@@ -1,0 +1,83 @@
+<meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+
+  <style>
+    .form-control{
+          border-radius:15px;
+      }</style><br>
+      <script>
+       
+
+        function performAjax(httpMethod, url, params) {
+            const myPromise = new Promise((resolve, reject) => {
+                var xhttp = new XMLHttpRequest();
+                xhttp.onreadystatechange = function () {
+                    if (this.readyState == 4 && this.status == 200) {
+                        resolve(JSON.parse(this.responseText));
+
+                    }
+                    if (this.status == 500) {
+                        reject({ error: true, message: "ServerError" });
+                    }
+                    if (this.status == 404) {
+                        reject({ error: true, message: "Resource not found" });
+                    }
+                };
+                xhttp.open(httpMethod, url, true);
+                xhttp.setRequestHeader("Content-Type", "application/json");
+                params ? xhttp.send(params) : xhttp.send();
+            });
+            return myPromise;
+        }
+
+        function AddTopic() {
+            event.preventDefault();
+            const Topic = document.getElementById("topic").value;
+            const addcomPromise = performAjax(
+                "POST",
+                "http://localhost:4000/Admin/Addtopic",
+                JSON.stringify({ Topic })
+
+            );
+            addcomPromise
+                .then((res) => {
+                    alert('Successfully Added Topic');
+                })
+                .catch(err => {
+                    alert(err.message);
+                    alert('Successfully not Added Topic');
+
+                })
+
+        }
+    </script>
+    <form onsubmit="AddTopic()">
+    <div class="row">
+       
+            <h3 style="text-align: center"><b></b></h3>
+       
+    </div><br>
+    <div class="row">
+        <div class="col-sm-4"></div>
+        <div class="col-sm-2" style="text-align: center">
+            <label for="">Upload Topic  :</label>
+        </div>
+        <div class="col-sm-3">
+            <input type="text" name="topic" id="topic" class="form-control" placeholder="" required>
+        </div>
+        <div class="col-sm-3"></div>
+    </div><br><br><br>
+    <div class="row">
+        <div class="col-sm-6"></div>
+        <div class="col-sm-2">
+                
+            <button type="submit"   class="btn btn-success">Submit</button>&nbsp;&nbsp;
+            
+        </div>
+        <div class="col-sm-4"></div>
+    </div><br><br></form>
+
+  </body>

@@ -1,0 +1,153 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+
+<style>
+    .form-control {
+        border-radius: 15px;
+    }
+
+    .tablecss {
+        font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+        border-collapse: collapse;
+        width: 60%;
+    }
+
+    .tablecss td,
+    .tablecss th {
+        border: 1px solid #ddd;
+        padding: 8px;
+    }
+
+    .tablecss tr:nth-child(odd) {
+        background-color: #f2f2f2;
+    }
+
+    .tablecss tr:hover {
+        background-color: #ddd;
+    }
+
+    .tablecss th {
+        padding-top: 12px;
+        padding-bottom: 12px;
+        text-align: center;
+        background-color: lavender;
+        color: black;
+        font-weight: bold;
+    }
+</style>
+<script>
+    const UserName = sessionStorage.getItem('username');
+
+   const ToUser=sessionStorage.getItem('tousername');
+
+    function performAjax(httpMethod, url, params) {
+        const myPromise = new Promise((resolve, reject) => {
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    resolve(JSON.parse(this.responseText));
+
+                }
+                if (this.status == 500) {
+                    reject({ error: true, message: "ServerError" });
+                }
+                if (this.status == 404) {
+                    reject({ error: true, message: "Resource not found" });
+                }
+            };
+            xhttp.open(httpMethod, url, true);
+            xhttp.setRequestHeader("Content-Type", "application/json");
+            params ? xhttp.send(params) : xhttp.send();
+        });
+        return myPromise;
+    }
+
+    function getUserName() {
+        document.getElementById("funame").value = UserName;
+        document.getElementById("tuname").value = ToUser;
+        const getdata1 = performAjax("GET", `http://localhost:4000/User/showchat?UserName=${UserName}&ToUser=${ToUser}`);
+        getdata1
+            .then((details) => {
+                Viewchats(details);
+
+            })
+            .catch(err => {
+                alert(err.message);
+            })
+    }
+
+
+    function Viewchats(records) {
+        let tableHeader = `<tr><th>SNo</th><th>FromUser</th><th>ToUser</th><th>Chat</th></tr>`;
+        if (records.length > 0) {
+            let tableRow = records.map((details, index) => {
+                return `<tr><td>${index + 1}</td><td>${details.UserName}</td><td>${details.ToUser}</td><td>${details.Chat}</td></tr>`;
+
+            });
+            document.getElementById("viewtable").innerHTML = `<table  class="scripted table" border="2">${tableHeader}${tableRow.join('')}</table>`;
+        }
+
+        else {
+            tableRow = `<tr><td colspan="3" align="center">No Data Found</td></tr>`;
+            document.getElementById("viewtable").innerHTML = `${tableHeader}${tableRow}`;
+        }
+    }
+    function AddChat() {
+        event.preventDefault();
+        const UserName = document.getElementById("funame").value;
+        const ToUser = document.getElementById("tuname").value;
+        const Chat = document.getElementById("chat").value;
+
+        const addcomPromise = performAjax(
+            "POST",
+            "http://localhost:4000/User/addchat",
+            JSON.stringify({ UserName, ToUser, Chat })
+
+        );
+        addcomPromise
+            .then((res) => {
+                alert('Successfully Chat Added');
+                getUserName();
+            })
+            .catch(err => {
+                alert(err.message);
+                alert('Successfully not chat Added');
+
+            })
+        }
+  
+</script>
+
+<body onload="getUserName()">
+    <br>
+    <form onsubmit="AddChat()">
+    <div class="row">
+            <div class="col-sm-3"><input type="hidden" name="uname" id="funame" disabled="false" class="form-control" placeholder="enter username" required></div>
+            <div class="col-sm-1">
+                <label for="">ToUserName</label>
+            </div>
+            <div class="col-sm-5">
+                <input type="text" name="tuname" disabled="false" id="tuname" class="form-control" required>
+            </div>
+            <div class="col-sm-3"></div>
+        </div><br>
+    <center>
+        <table id=viewtable border="1" class="tablecss" style="width: 1000px;"></table>
+    </center>
+    <br><br>
+   
+    <div class="row">
+        <div class="col-sm-3"></div>
+        <div class="col-sm-1">
+            <label for="">Chat</label>
+        </div>
+        <div class="col-sm-3">
+            <textarea rows="3" name="comment"  id="chat" class="form-control" placeholder="enter Chat" required></textarea>
+        </div>
+        <div class="col-sm-2"><button type="submit"  class="btn btn-success btn btn-lg">Add</button></div>
+        <div class="col-sm-3"></div>
+    </div><br></form>
+</body>
